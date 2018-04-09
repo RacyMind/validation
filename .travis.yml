@@ -12,12 +12,9 @@ php:
   - hhvm
   - hhvm-nightly
 
-cache:
-  directories:
-  - vendor
-
 before_script:
-  - composer install --dev --no-interaction --prefer-source
+  - composer self-update
+  - composer install --no-interaction --prefer-source
 
 script:
   - vendor/bin/phpunit --configuration phpunit.xml.dist --colors --coverage-clover=coverage.clover
@@ -28,7 +25,6 @@ after_script:
 
 matrix:
   allow_failures:
-    - php: hhvm
     - php: hhvm-nightly
 
 notifications:

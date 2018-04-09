@@ -8,6 +8,7 @@ use Respect\Validation\Exceptions\ComponentException;
 use Respect\Validation\Rules\AllOf;
 
 /**
+ * @method static Validator age(int $minAge = null, int $maxAge = null)
  * @method static Validator allOf()
  * @method static Validator alnum(string $additionalChars = null)
  * @method static Validator alpha(string $additionalChars = null)
@@ -15,12 +16,15 @@ use Respect\Validation\Rules\AllOf;
  * @method static Validator alwaysValid()
  * @method static Validator arr()
  * @method static Validator attribute(string $reference, Validatable $validator = null, bool $mandatory = true)
+ * @method static Validator bank(string $countryCode)
+ * @method static Validator bankAccount(string $countryCode)
  * @method static Validator base()
- * @method static Validator between(int $min = null, int $max = null, bool $inclusive = false)
+ * @method static Validator between(mixed $min = null, mixed $max = null, bool $inclusive = false)
+ * @method static Validator bic(string $countryCode)
  * @method static Validator bool()
  * @method static Validator call()
  * @method static Validator callback(mixed $callback)
- * @method static Validator charset(array $charset)
+ * @method static Validator charset(mixed $charset)
  * @method static Validator cnh()
  * @method static Validator cnpj()
  * @method static Validator consonant(string $additionalChars = null)
@@ -35,27 +39,29 @@ use Respect\Validation\Rules\AllOf;
  * @method static Validator each(Validatable $itemValidator = null, Validatable $keyValidator = null)
  * @method static Validator email()
  * @method static Validator endsWith(mixed $endValue, bool $identical = false)
- * @method static Validator equals(mixed $compareTo, bool $compareIdentical=false)
+ * @method static Validator equals(mixed $compareTo, bool $compareIdentical = false)
  * @method static Validator even()
  * @method static Validator executable()
  * @method static Validator exists()
+ * @method static Validator false()
  * @method static Validator file()
+ * @method static Validator filterVar(int $filter, mixed $options = null)
  * @method static Validator float()
  * @method static Validator graph(string $additionalChars = null)
  * @method static Validator hexRgbColor()
- * @method static Validator in(array $haystack, bool $compareIdentical = false)
+ * @method static Validator in(mixed $haystack, bool $compareIdentical = false)
  * @method static Validator instance(string $instanceName)
  * @method static Validator int()
- * @method static Validator ip(array $ipOptions = null)
+ * @method static Validator ip(mixed $ipOptions = null)
  * @method static Validator json()
  * @method static Validator key(string $reference, Validatable $referenceValidator = null, bool $mandatory = true)
- * @method static Validator leapDate(mixed $format)
+ * @method static Validator leapDate(string $format)
  * @method static Validator leapYear()
- * @method static Validator length(int $min=null, int $max=null, bool $inclusive = true)
+ * @method static Validator length(int $min = null, int $max = null, bool $inclusive = true)
  * @method static Validator lowercase()
  * @method static Validator macAddress()
- * @method static Validator max(int $maxValue, bool $inclusive = false)
- * @method static Validator min(int $minValue, bool $inclusive = false)
+ * @method static Validator max(mixed $maxValue, bool $inclusive = false)
+ * @method static Validator min(mixed $minValue, bool $inclusive = false)
  * @method static Validator minimumAge(int $age)
  * @method static Validator multiple(int $multipleOf)
  * @method static Validator negative()
@@ -72,12 +78,12 @@ use Respect\Validation\Rules\AllOf;
  * @method static Validator perfectSquare()
  * @method static Validator phone()
  * @method static Validator positive()
- * @method static Validator postalCode($countryCode)
+ * @method static Validator postalCode(string $countryCode)
  * @method static Validator primeNumber()
  * @method static Validator prnt(string $additionalChars = null)
  * @method static Validator punct(string $additionalChars = null)
  * @method static Validator readable()
- * @method static Validator regex($regex)
+ * @method static Validator regex(string $regex)
  * @method static Validator roman()
  * @method static Validator sf(string $name, array $params = null)
  * @method static Validator slug()
@@ -86,11 +92,14 @@ use Respect\Validation\Rules\AllOf;
  * @method static Validator string()
  * @method static Validator symbolicLink()
  * @method static Validator tld()
+ * @method static Validator true()
+ * @method static Validator type(string $type)
  * @method static Validator uploaded()
  * @method static Validator uppercase()
+ * @method static Validator url()
  * @method static Validator version()
  * @method static Validator vowel()
- * @method static Validator when(Validatable $if, Validatable $then, Validatable $when)
+ * @method static Validator when(Validatable $if, Validatable $then, Validatable $when = null)
  * @method static Validator writable()
  * @method static Validator xdigit(string $additionalChars = null)
  * @method static Validator yes($useLocale = false)
@@ -98,6 +107,45 @@ use Respect\Validation\Rules\AllOf;
  */
 class Validator extends AllOf
 {
+    protected static $factory;
+
+    /**
+     * @return Factory
+     */
+    protected static function getFactory()
+    {
+        if (! static::$factory instanceof Factory) {
+            static::$factory = new Factory();
+        }
+
+        return static::$factory;
+    }
+
+    /**
+     * @param Factory $factory
+     *
+     * @return null
+     */
+    public static function setFactory($factory)
+    {
+        static::$factory = $factory;
+    }
+
+    /**
+     * @param string $rulePrefix
+     * @param bool   $prepend
+     *
+     * @return null
+     */
+    public static function with($rulePrefix, $prepend = false)
+    {
+        if (false === $prepend) {
+            self::getFactory()->appendRulePrefix($rulePrefix);
+        } else {
+            self::getFactory()->prependRulePrefix($rulePrefix);
+        }
+    }
+
     /**
      * @param string $ruleName
      * @param array  $arguments
@@ -123,18 +171,10 @@ class Validator extends AllOf
      */
     public static function buildRule($ruleSpec, $arguments = array())
     {
-        if ($ruleSpec instanceof Validatable) {
-            return $ruleSpec;
-        }
-
         try {
-            $validatorFqn = 'Respect\\Validation\\Rules\\'.ucfirst($ruleSpec);
-            $validatorClass = new ReflectionClass($validatorFqn);
-            $validatorInstance = $validatorClass->newInstanceArgs($arguments);
-
-            return $validatorInstance;
-        } catch (ReflectionException $e) {
-            throw new ComponentException($e->getMessage());
+            return static::getFactory()->rule($ruleSpec, $arguments);
+        } catch (\Exception $exception) {
+            throw new ComponentException($exception->getMessage(), $exception->getCode(), $exception);
         }
     }
 
@@ -146,13 +186,8 @@ class Validator extends AllOf
      */
     public function __call($method, $arguments)
     {
-        if ('not' === $method) {
-            return $arguments ? static::buildRule($method, $arguments) : new Rules\Not($this);
-        }
-
-        if (isset($method{4}) &&
-            substr($method, 0, 4) == 'base' && preg_match('@^base([0-9]{1,2})$@', $method, $match)) {
-            return $this->addRule(static::buildRule('base', array($match[1])));
+        if ('not' === $method && empty($arguments)) {
+            return new static(new Rules\Not($this));
         }
 
         return $this->addRule(static::buildRule($method, $arguments));

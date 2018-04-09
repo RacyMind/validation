@@ -29,7 +29,6 @@ class Factory
         if ($ruleName instanceof Validatable) {
             return $ruleName;
         }
-
         foreach ($this->getRulePrefixes() as $prefix) {
             $className = $prefix.ucfirst($ruleName);
             if (! class_exists($className)) {

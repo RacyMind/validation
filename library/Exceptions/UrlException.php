@@ -1,5 +1,6 @@
 <?php
 namespace Respect\Validation\Exceptions;
+
 class UrlException extends ValidationException
 {
     public static $defaultTemplates = array(
